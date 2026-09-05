@@ -1,4 +1,4 @@
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "material-symbols/outlined.css";
 import "./globals.css";
@@ -11,9 +11,13 @@ import { RuntimeI18nProvider } from "@/i18n/RuntimeI18nProvider";
 // Hook console immediately at module load time (server-side only, runs once)
 initConsoleLogCapture();
 
-const inter = Inter({
-  subsets: ["latin"],
+// Self-hosted (not next/font/google): build environments without outbound
+// access to Google Fonts (blocked IPs, offline CI, restricted VPS networks)
+// would otherwise fail `npm run build` fetching Inter at build time.
+const inter = localFont({
+  src: "./fonts/Inter-Variable.woff2",
   variable: "--font-inter",
+  weight: "100 900",
 });
 
 export const metadata = {
