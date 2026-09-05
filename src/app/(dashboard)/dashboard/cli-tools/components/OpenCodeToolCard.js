@@ -286,7 +286,7 @@ export default function OpenCodeToolCard({ tool, isExpanded, onToggle, baseUrl, 
             </div>
           )}
 
-          {!checking && status?.installed && (
+          {!checking && status && (
             <>
               <div className="flex flex-col gap-2">
                 {/* Current base URL */}
