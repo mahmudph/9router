@@ -3,10 +3,8 @@ services:
     image: decolua/9router:latest
     container_name: 9router
     restart: always
-    ports:
-      - "20128:20128"
     volumes:
-      - 9router-data:/app/data
+      - ./data:/app/data
     env_file:
       - .env
     environment:
@@ -17,6 +15,17 @@ services:
       HEADROOM_URL: http://headroom:8787
     depends_on:
       - headroom
+    networks:
+      - 9router_network
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.9router.rule=Host(`${APP_HOST:-9router.localhost}`)
+      - traefik.http.routers.9router.tls=true
+      - traefik.http.routers.9router.entrypoints=websecure
+      - traefik.http.routers.9router.tls.certresolver=myresolver
+      - traefik.http.services.9router.loadbalancer.server.port=20128
+      - traefik.docker.network=traefik
 
   headroom:
     image: ghcr.io/chopratejas/headroom:latest
@@ -24,7 +33,11 @@ services:
     restart: always
     ports:
       - "8787:8787"
+    networks:
+      - 9router_network
 
-volumes:
-  9router-data:
-    name: 9router-data
+networks:
+  9router_network:
+    driver: bridge
+  traefik:
+    external: true
