@@ -86,6 +86,47 @@ describe("handleImageGenerationCore", () => {
     expect(responseBody.data[0].url).toBe("https://example.com/image.png");
   });
 
+  it("generates image with Agnes format (aspect_ratio, no size)", async () => {
+    global.fetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          created: 1234567890,
+          data: [{ url: "https://example.com/agnes.png" }],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    const result = await handleImageGenerationCore({
+      body: { prompt: "A cute cat", n: 1, size: "1536x1024" },
+      modelInfo: { provider: "agnes", model: "agnes-image-2.1-flash" },
+      credentials: { apiKey: "test-key" },
+      log: null,
+    });
+
+    expect(result.success).toBe(true);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://apihub.agnes-ai.com/v1/images/generations",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+          Authorization: "Bearer test-key",
+        }),
+      })
+    );
+
+    // Agnes sizes by aspect_ratio, so the OpenAI-style size must be translated
+    // rather than forwarded - 1536x1024 is 3:2.
+    const requestBody = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(requestBody.aspect_ratio).toBe("3:2");
+    expect(requestBody).not.toHaveProperty("size");
+    expect(requestBody.model).toBe("agnes-image-2.1-flash");
+
+    const responseBody = await result.response.json();
+    expect(responseBody.data[0].url).toBe("https://example.com/agnes.png");
+  });
+
   it("generates image with Gemini format", async () => {
     global.fetch.mockResolvedValueOnce(
       new Response(

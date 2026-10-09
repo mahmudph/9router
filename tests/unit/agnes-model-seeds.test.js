@@ -7,12 +7,19 @@ import agnes from "../../open-sse/providers/registry/agnes.js";
 // passthroughModels still accepts anything the account actually has.
 
 describe("agnes registry model seeds", () => {
-  it("declares the four 2.5/3.0 models", () => {
-    expect(agnes.models.map((m) => m.id)).toEqual([
+  it("declares the four 2.5/3.0 chat models", () => {
+    expect(agnes.models.filter((m) => (m.kind || "llm") === "llm").map((m) => m.id)).toEqual([
       "agnes-2.5-flash",
       "agnes-2.5-pro",
       "agnes-2.5-pro-beta",
       "agnes-3.0-flash",
+    ]);
+  });
+
+  it("declares the image models", () => {
+    expect(agnes.models.filter((m) => m.kind === "image").map((m) => m.id)).toEqual([
+      "agnes-image-2.1-flash",
+      "agnes-image-2.0-flash",
     ]);
   });
 
@@ -36,5 +43,12 @@ describe("agnes registry model seeds", () => {
   it("leaves transport untouched", () => {
     expect(agnes.transport.baseUrl).toBe("https://apihub.agnes-ai.com/v1/chat/completions");
     expect(agnes.transport.validateUrl).toBe("https://apihub.agnes-ai.com/v1/models");
+  });
+
+  it("exposes the image service kind and endpoint", () => {
+    // Both are required for the provider to appear under dashboard
+    // media-providers/image and for getImageAdapter to resolve.
+    expect(agnes.serviceKinds).toContain("image");
+    expect(agnes.imageConfig.baseUrl).toBe("https://apihub.agnes-ai.com/v1/images/generations");
   });
 });

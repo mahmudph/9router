@@ -33,6 +33,17 @@ export default {
     { id: "agnes-2.5-pro", name: "Agnes 2.5 Pro" },
     { id: "agnes-2.5-pro-beta", name: "Agnes 2.5 Pro Beta" },
     { id: "agnes-3.0-flash", name: "Agnes 3.0 Flash" },
+    // Image models are seeded for the same reason - /v1/models 401s without a
+    // token, so there is no public image catalogue to dump.
+    { id: "agnes-image-2.1-flash", name: "Agnes Image 2.1 Flash", kind: "image", capabilities: ["text2img"], params: ["n", "size", "response_format"] },
+    { id: "agnes-image-2.0-flash", name: "Agnes Image 2.0 Flash", kind: "image", capabilities: ["text2img"], params: ["n", "size", "response_format"] },
   ],
+  serviceKinds: [
+    "llm",
+    "image",
+  ],
+  imageConfig: {
+    baseUrl: "https://apihub.agnes-ai.com/v1/images/generations",
+  },
   passthroughModels: true,
 };
