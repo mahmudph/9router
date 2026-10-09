@@ -106,6 +106,36 @@ export async function pingModelByKind(model, kind, baseUrl = `http://127.0.0.1:$
     return { ok: true, latencyMs, error: null, status: res.status };
   }
 
+  if (kind === "video") {
+    // Video is an async job, so this only proves the create leg is accepted —
+    // it returns a job id and the render happens server-side afterwards. Like the
+    // image ping above it submits a real, billable job; there is no cheap
+    // validate-only endpoint on these providers.
+    const res = await fetch(`${baseUrl}/api/v1/videos/generations`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ model, prompt: "test" }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const latencyMs = Date.now() - start;
+    const rawText = await res.text().catch(() => "");
+    let parsed = null;
+    try { parsed = rawText ? JSON.parse(rawText) : null; } catch {}
+
+    if (!res.ok) {
+      const detail = parsed?.error?.message || parsed?.msg || parsed?.message || parsed?.error || parsed?.code || rawText;
+      return { ok: false, latencyMs, error: `HTTP ${res.status}${detail ? `: ${String(detail).slice(0, 240)}` : ""}`, status: res.status };
+    }
+
+    // A job id is what proves the create leg worked; the payload is not an image
+    // and is never polled here.
+    const hasJob = Boolean(parsed?.id || parsed?.request_id || parsed?.video_id);
+    if (!hasJob) {
+      return { ok: false, latencyMs, status: res.status, error: "Provider returned no video job id for this model" };
+    }
+    return { ok: true, latencyMs, error: null, status: res.status };
+  }
+
   if (kind === "stt") {
     const form = new FormData();
     const sampleAudio = createSilentWavFile();

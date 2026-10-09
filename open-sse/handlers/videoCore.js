@@ -185,11 +185,14 @@ export async function handleVideoProxyCore({
 
   // Success: pass the upstream JSON through untouched (request_id / status / video.url),
   // unless the adapter maps a provider-native shape onto it (Vertex operations).
+  // The second argument is optional request context: an adapter that must echo a
+  // request value into the response (e.g. packing the model into a job id) needs
+  // it, since by this point only the upstream body is in hand. Must stay sync.
   let outBody = bodyText;
   let outType = upstream.headers.get("content-type") || "application/json";
   if (adapter?.transformResponse) {
     try {
-      outBody = JSON.stringify(adapter.transformResponse(JSON.parse(bodyText)));
+      outBody = JSON.stringify(adapter.transformResponse(JSON.parse(bodyText), { requestId, action, rawBody }));
       outType = "application/json";
     } catch {
       // Non-JSON or unexpected shape — fall back to the raw upstream body.

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/shared/components";
 import { MEDIA_PROVIDER_KINDS, getProviderAlias, resolveProviderId } from "@/shared/constants/providers";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
+import { VIDEO_PROVIDER_CONFIG } from "@/shared/constants/videoProviders";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { Row, KIND_EXAMPLE_CONFIG } from "./exampleShared";
 
@@ -13,8 +14,16 @@ const CLOUDFLARE_TEST_MASK_URL = "https://pub-1fb693cb11cc46b2b2f656f51e015a2c.r
 // the card is runnable as-is. The router derives it from inputs, not from the Hub host.
 const HUGGINGFACE_TEST_IMAGE_URL = CLOUDFLARE_TEST_IMAGE_URL;
 
-function getImageEditDefaults(providerId, modelId) {
-  if (providerId === "huggingface") {
+// Video duration/resolution are fixed sets per upstream, not free-form. A
+// provider can narrow the generic field list, and a specific model can narrow it
+// further (e.g. a 720p-locked tier). The most specific match wins.
+function resolveFieldOptions(providerId, modelId, key, fallback) {
+  const cfg = VIDEO_PROVIDER_CONFIG[providerId];
+  if (!cfg) return fallback;
+  return cfg.modelFieldOptions?.[modelId]?.[key] ?? cfg.fieldOptions?.[key] ?? fallback;
+}
+
+function getImageEditDefaults(providerId, modelId) {  if (providerId === "huggingface") {
     return { image: HUGGINGFACE_TEST_IMAGE_URL };
   }
   if (providerId !== "cloudflare-ai") return {};
@@ -435,15 +444,19 @@ export function GenericExampleCard({ providerId, kind }) {
         {/* Extra fields — for kinds without model concept (webSearch/webFetch), show all; otherwise filter by model.params */}
         {(exConfig.extraFields || [])
           .filter((f) => kindModels.length === 0 || (Array.isArray(selectedModelObj?.params) && selectedModelObj.params.includes(f.key)))
-          .map((f) => (
-          <Row key={f.key} label={f.label}>
+          .map((f) => {
+            const options = f.options
+              ? resolveFieldOptions(providerId, selectedModel, f.key, f.options)
+              : f.options;
+            return (
+            <Row key={f.key} label={f.label}>
             {f.type === "select" ? (
               <select
                 value={extraValues[f.key] ?? ""}
                 onChange={(e) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               >
-                {(f.options || []).map((opt) => (
+                {(options || []).map((opt) => (
                   <option key={opt} value={opt}>{opt === "" ? "(default)" : opt}</option>
                 ))}
               </select>
@@ -466,7 +479,8 @@ export function GenericExampleCard({ providerId, kind }) {
               />
             )}
           </Row>
-        ))}
+            );
+          })}
 
         {/* Output Format toggle (image only) — last */}
         {kind === "image" && (

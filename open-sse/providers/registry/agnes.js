@@ -37,13 +37,23 @@ export default {
     // token, so there is no public image catalogue to dump.
     { id: "agnes-image-2.1-flash", name: "Agnes Image 2.1 Flash", kind: "image", capabilities: ["text2img"], params: ["n", "size", "response_format"] },
     { id: "agnes-image-2.0-flash", name: "Agnes Image 2.0 Flash", kind: "image", capabilities: ["text2img"], params: ["n", "size", "response_format"] },
+    { id: "agnes-video-2.5", name: "Agnes Video 2.5", kind: "video", params: ["duration", "aspect_ratio", "resolution"] },
+    { id: "agnes-video-2.5-flash", name: "Agnes Video 2.5 Flash", kind: "video", params: ["duration", "aspect_ratio", "resolution"] },
   ],
   serviceKinds: [
     "llm",
     "image",
+    "video",
   ],
   imageConfig: {
     baseUrl: "https://apihub.agnes-ai.com/v1/images/generations",
+  },
+  // Async video jobs. The collection is mounted at /videos (no /generations),
+  // and polling goes to a separate /agnesapi endpoint that takes video_id plus
+  // model_name, so both legs are translated in handlers/videoProviders/agnes.js.
+  videoConfig: {
+    baseUrl: "https://apihub.agnes-ai.com/v1",
+    pollUrl: "https://apihub.agnes-ai.com/agnesapi",
   },
   passthroughModels: true,
 };
