@@ -51,4 +51,19 @@ describe("agnes registry model seeds", () => {
     expect(agnes.serviceKinds).toContain("image");
     expect(agnes.imageConfig.baseUrl).toBe("https://apihub.agnes-ai.com/v1/images/generations");
   });
+
+  it("exposes the video service kind and both endpoints", () => {
+    // The create collection and the poll endpoint are separate, so videoConfig
+    // carries both; the adapter needs pollUrl to reach /agnesapi.
+    expect(agnes.serviceKinds).toContain("video");
+    expect(agnes.videoConfig.baseUrl).toBe("https://apihub.agnes-ai.com/v1");
+    expect(agnes.videoConfig.pollUrl).toBe("https://apihub.agnes-ai.com/agnesapi");
+  });
+
+  it("declares the video models", () => {
+    expect(agnes.models.filter((m) => m.kind === "video").map((m) => m.id)).toEqual([
+      "agnes-video-2.5",
+      "agnes-video-2.5-flash",
+    ]);
+  });
 });

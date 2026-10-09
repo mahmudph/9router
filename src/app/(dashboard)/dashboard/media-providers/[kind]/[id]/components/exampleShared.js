@@ -64,7 +64,16 @@ export const KIND_EXAMPLE_CONFIG = {
     inputPlaceholder: "A serene lake at sunset",
     defaultInput: "A serene lake at sunset",
     bodyKey: "prompt",
-    defaultResponse: `{\n  "data": [\n    { "url": "..." }\n  ]\n}`,
+    // Video is an async job: this leg returns a job id, and the caller polls
+    // GET /v1/videos/{id} until status reports done/completed.
+    defaultResponse: `{\n  "id": "...",\n  "request_id": "...",\n  "status": "pending"\n}\n\n// then poll GET /v1/videos/{id} until status is "completed"\n{\n  "id": "...",\n  "status": "completed",\n  "video": { "url": "https://.../video.mp4" }\n}`,
+    extraFields: [
+      // Discrete values, not a free-form number: providers reject unsupported
+      // durations. Per-provider sets live in constants/videoProviders.js.
+      { key: "duration", label: "Duration", type: "select", default: "", options: ["", "4", "5", "6", "8", "10", "12"] },
+      { key: "aspect_ratio", label: "Aspect Ratio", type: "select", default: "", options: ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"] },
+      { key: "resolution", label: "Resolution", type: "select", default: "", options: ["", "720P", "1080P", "1K", "2K"] },
+    ],
   },
   music: {
     inputLabel: "Prompt",
