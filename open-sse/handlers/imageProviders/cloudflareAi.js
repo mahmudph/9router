@@ -1,13 +1,9 @@
 import { nowSec, urlToBase64 } from "./_base.js";
 import { PROVIDER_MEDIA } from "../../providers/index.js";
 
-const BASE_URL = PROVIDER_MEDIA["cloudflare-ai"]?.imageConfig?.baseUrl;
-
-const MULTIPART_MODELS = new Set([
-  "@cf/black-forest-labs/flux-2-dev",
-  "@cf/black-forest-labs/flux-2-klein-4b",
-  "@cf/black-forest-labs/flux-2-klein-9b",
-]);
+const IMAGE_CONFIG = PROVIDER_MEDIA["cloudflare-ai"]?.imageConfig;
+const BASE_URL = IMAGE_CONFIG?.baseUrl;
+const MULTIPART_MODELS = new Set(IMAGE_CONFIG?.multipartModels || []);
 
 const OPTIONAL_FIELDS = [
   "negative_prompt",
@@ -90,7 +86,17 @@ async function buildJsonBody(body) {
   return req;
 }
 
-function buildMultipartBody(body) {
+async function buildMultipartBody(body) {
+  if (body.images != null && !Array.isArray(body.images)) {
+    throw new Error("Cloudflare image references must be an images array");
+  }
+  // Match the other multi-reference adapters: images first, then singular image.
+  const references = [...(body.images || [])];
+  if (body.image != null) references.push(body.image);
+  if (references.length > IMAGE_CONFIG.maxReferenceImages) {
+    throw new Error(`Cloudflare FLUX.2 supports at most ${IMAGE_CONFIG.maxReferenceImages} reference images`);
+  }
+
   const form = new FormData();
   form.append("prompt", body.prompt);
 
@@ -102,6 +108,18 @@ function buildMultipartBody(body) {
   addOptionalFields(form, body, (target, key, value) => {
     target.append(key, String(value));
   });
+
+  for (const [index, reference] of references.entries()) {
+    const image = await resolveImageInput(reference);
+    if (!image || !image.bytes.length) {
+      throw new Error(`Invalid Cloudflare reference image at index ${index}`);
+    }
+    form.append(
+      `${IMAGE_CONFIG.referenceFieldPrefix}${index}`,
+      new Blob([new Uint8Array(image.bytes)]),
+      `reference-${index}`
+    );
+  }
 
   return form;
 }
