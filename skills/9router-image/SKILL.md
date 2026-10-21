@@ -83,4 +83,20 @@ Common fields above work everywhere. These add/override:
 | `stability-ai` | `style` (preset), `output_format` | `size` → `aspect_ratio` |
 | `black-forest-labs` (FLUX) | `image` (ref) | `size` → exact `width`/`height`; async |
 | `runwayml` | `image` (ref) | `size` → ratio; async; video models exist |
+| `cf` / `cloudflare-ai` (FLUX.2 Dev, Klein 4B/9B) | `image`, `images[]` | Up to 4 ordered references; converted to binary multipart fields for Workers AI |
 | `sdwebui`, `comfyui` | — | Localhost noAuth (`:7860` / `:8188`) |
+
+## Cloudflare FLUX.2 references
+
+Send a singular `image` or an ordered `images` array to the same JSON generation endpoint. Each reference may be an HTTPS image URL, an image Base64 data URI, raw Base64, or an array of image bytes. If both fields are provided, the array comes first and the singular image is appended. The combined maximum is 4; excess or malformed references fail before generation rather than being dropped.
+
+```json
+{
+  "model": "cf/@cf/black-forest-labs/flux-2-klein-9b",
+  "prompt": "Preserve the robot from image 0 and replace the background with a garden",
+  "images": ["https://example.com/robot.png"],
+  "size": "1024x1024"
+}
+```
+
+The adapter downloads URL inputs without provider credentials and sends image bytes as `input_image_0` through `input_image_3`. Clients should not send local filesystem paths or construct Cloudflare multipart requests themselves. Keep reference images smaller than 512×512 as required by the [Workers AI reference documentation](https://developers.cloudflare.com/changelog/post/2026-01-28-flux-2-klein-9b-workers-ai/); the adapter does not resize them. Prompt-only requests continue to use multipart internally without image parts.

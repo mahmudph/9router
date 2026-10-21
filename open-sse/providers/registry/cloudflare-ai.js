@@ -41,9 +41,9 @@ export default {
     { id: "@cf/zai-org/glm-4.7-flash", name: "GLM 4.7 Flash" },
     { id: "@cf/qwen/qwq-32b", name: "QwQ 32B" },
     { id: "@cf/qwen/qwen2.5-coder-32b-instruct", name: "Qwen 2.5 Coder 32B Instruct" },
-    { id: "@cf/black-forest-labs/flux-2-klein-9b", name: "FLUX.2 Klein 9B", params: ["size"], kind: "image" },
-    { id: "@cf/black-forest-labs/flux-2-klein-4b", name: "FLUX.2 Klein 4B", params: ["size"], kind: "image" },
-    { id: "@cf/black-forest-labs/flux-2-dev", name: "FLUX.2 Dev", params: ["size"], kind: "image" },
+    { id: "@cf/black-forest-labs/flux-2-klein-9b", name: "FLUX.2 Klein 9B", params: ["size", "image", "images"], capabilities: ["text2img", "edit"], kind: "image" },
+    { id: "@cf/black-forest-labs/flux-2-klein-4b", name: "FLUX.2 Klein 4B", params: ["size", "image", "images"], capabilities: ["text2img", "edit"], kind: "image" },
+    { id: "@cf/black-forest-labs/flux-2-dev", name: "FLUX.2 Dev", params: ["size", "image", "images"], capabilities: ["text2img", "edit"], kind: "image" },
     { id: "@cf/leonardo/lucid-origin", name: "Lucid Origin", params: ["size"], kind: "image" },
     { id: "@cf/leonardo/phoenix-1.0", name: "Phoenix 1.0", params: ["size"], kind: "image" },
     { id: "@cf/black-forest-labs/flux-1-schnell", name: "FLUX.1 Schnell", params: ["size"], kind: "image" },
@@ -59,5 +59,16 @@ export default {
     authType: "apikey",
     authHeader: "bearer",
   },
-  imageConfig: { baseUrl: "https://api.cloudflare.com/client/v4/accounts" },
+  imageConfig: {
+    baseUrl: "https://api.cloudflare.com/client/v4/accounts",
+    multipartModels: [
+      "@cf/black-forest-labs/flux-2-dev",
+      "@cf/black-forest-labs/flux-2-klein-4b",
+      "@cf/black-forest-labs/flux-2-klein-9b",
+    ],
+    // Workers AI expects binary multipart fields input_image_0 through input_image_3.
+    // https://developers.cloudflare.com/changelog/post/2026-01-28-flux-2-klein-9b-workers-ai/
+    referenceFieldPrefix: "input_image_",
+    maxReferenceImages: 4,
+  },
 };
